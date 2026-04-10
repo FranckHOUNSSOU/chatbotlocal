@@ -1,0 +1,10 @@
+version: "3"
+agent:
+  authtoken: 3C8zqXgSBL3nY0BoFzpLOVyqDP5_FSf5wNaoGn8jNCVNQcRN
+tunnels:
+  chatbotlocal:
+    proto: http
+    addr: 3000
+    request_header:
+      add:
+        - "ngrok-skip-browser-warning: true"
