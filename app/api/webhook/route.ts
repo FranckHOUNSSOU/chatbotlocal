@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
+import twilio from 'twilio';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!);
+const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!);
 
-const OWNER_PHONE = 'whatsapp:+22967383616'; // Ton numéro WhatsApp
+const OWNER_PHONE = 'whatsapp:+22967383616';
 
 async function sendWhatsApp(to: string, message: string) {
-  const twilio = (await import('twilio')).default;
-  const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!);
-  await client.messages.create({
+  await twilioClient.messages.create({
     from: process.env.TWILIO_PHONE_NUMBER!,
     to,
     body: message,
@@ -72,13 +72,16 @@ LIVRAISON : Disponible dans Cotonou pour 1 000 FCFA`,
 
   let reply = (response.content[0] as any).text;
 
-  // Vérifier si transfert nécessaire
   if (reply.includes('[TRANSFERT]')) {
     reply = reply.replace('[TRANSFERT]', '').trim();
-    await sendWhatsApp(
-      OWNER_PHONE,
-      `🚨 Client nécessite ton aide !\nNuméro : ${from}\nDernier message : "${body}"`
-    );
+    try {
+      await sendWhatsApp(
+        OWNER_PHONE,
+        `🚨 Client nécessite ton aide !\nNuméro : ${from}\nDernier message : "${body}"`
+      );
+    } catch (e) {
+      console.error('Erreur notification owner:', e);
+    }
   }
 
   await supabase.from('conversations').insert([
