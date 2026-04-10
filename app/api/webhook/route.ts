@@ -5,6 +5,18 @@ import { createClient } from '@supabase/supabase-js';
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!);
 
+const OWNER_PHONE = 'whatsapp:+2290167383616'; // Ton numéro WhatsApp
+
+async function sendWhatsApp(to: string, message: string) {
+  const twilio = (await import('twilio')).default;
+  const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!);
+  await client.messages.create({
+    from: process.env.TWILIO_PHONE_NUMBER!,
+    to,
+    body: message,
+  });
+}
+
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
   const from = formData.get('From') as string;
@@ -45,16 +57,29 @@ CATALOGUE ET PRIX :
 RÈGLES DE NÉGOCIATION :
 - Commence toujours par le prix maximum
 - Si le client négocie, tu peux descendre jusqu'au prix minimum MAIS jamais en dessous
-- Si le client insiste encore en dessous du minimum, dis que c'est impossible mais offre un petit cadeau (ex: une ceinture gratuite)
-- Ne cède pas trop vite — dis d'abord "Aïe, c'est vraiment mon meilleur prix" avant de baisser
+- Si le client insiste encore en dessous du minimum, dis que c'est impossible mais offre un petit cadeau
+- Ne cède pas trop vite
+
+TRANSFERT HUMAIN :
+- Si le client a une réclamation sérieuse, un problème de livraison, ou une demande très spéciale que tu ne peux pas gérer, réponds normalement MAIS ajoute à la toute fin de ton message uniquement ce tag caché : [TRANSFERT]
+- N'explique pas ce tag au client
 
 HORAIRES : Lundi-Samedi 9h-20h, Dimanche 10h-17h
-LOCALISATION : Quartier Cadjehoun, Cotonou, près du carrefour Cadjehoun
+LOCALISATION : Quartier Cadjehoun, Cotonou
 LIVRAISON : Disponible dans Cotonou pour 1 000 FCFA`,
     messages,
   });
 
-  const reply = (response.content[0] as any).text;
+  let reply = (response.content[0] as any).text;
+
+  // Vérifier si transfert nécessaire
+  if (reply.includes('[TRANSFERT]')) {
+    reply = reply.replace('[TRANSFERT]', '').trim();
+    await sendWhatsApp(
+      OWNER_PHONE,
+      `🚨 Client nécessite ton aide !\nNuméro : ${from}\nDernier message : "${body}"`
+    );
+  }
 
   await supabase.from('conversations').insert([
     { phone_number: from, role: 'user', message: body },
