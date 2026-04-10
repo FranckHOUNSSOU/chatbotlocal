@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!);
 
-const OWNER_PHONE = 'whatsapp:+2290167383616'; // Ton numéro WhatsApp
+const OWNER_PHONE = 'whatsapp:+22967383616'; // Ton numéro WhatsApp
 
 async function sendWhatsApp(to: string, message: string) {
   const twilio = (await import('twilio')).default;
