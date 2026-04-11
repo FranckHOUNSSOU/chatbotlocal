@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     .select('role, message')
     .eq('phone_number', from)
     .order('created_at', { ascending: true })
-    .limit(10);
+    .limit(20);
 
   const messages = (history || []).map((h: any) => ({
     role: h.role as 'user' | 'assistant',
