@@ -5,16 +5,60 @@ import twilio from 'twilio';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!);
-const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!);
 
-const OWNER_PHONE = 'whatsapp:+22967383616';
-
-async function sendWhatsApp(to: string, message: string) {
+async function sendWhatsApp(to: string, message: string, ownerPhone: string) {
+  const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!);
   await twilioClient.messages.create({
     from: process.env.TWILIO_PHONE_NUMBER!,
     to,
     body: message,
   });
+}
+
+async function buildSystemPrompt(): Promise<{ prompt: string; ownerPhone: string }> {
+  const { data: config } = await supabase.from('bot_config').select('*').single();
+  const { data: products } = await supabase.from('products').select('*').eq('available', true);
+
+  if (config?.system_prompt) {
+    return { prompt: config.system_prompt, ownerPhone: config.owner_phone };
+  }
+
+  let catalogue = '';
+  if (products && products.length > 0) {
+    catalogue = '\n\nCATALOGUE DISPONIBLE :\n';
+    products.forEach((p: any) => {
+      catalogue += `- ${p.name}`;
+      if (p.category) catalogue += ` (${p.category})`;
+      if (p.price_fixed) catalogue += ` : ${p.price_fixed.toLocaleString()} FCFA`;
+      else if (p.price_min && p.price_max) catalogue += ` : entre ${p.price_min.toLocaleString()} et ${p.price_max.toLocaleString()} FCFA`;
+      if (p.description) catalogue += ` — ${p.description}`;
+      catalogue += '\n';
+    });
+  }
+
+  const prompt = `Tu es ${config?.bot_name || 'un assistant'}, vendeur(se) à ${config?.business_name || 'notre boutique'}.
+
+RÈGLES IMPORTANTES :
+- Parle exactement comme un(e) vrai(e) vendeur(se) béninois(e) — utilise des expressions naturelles et chaleureuses
+- Ne dis JAMAIS que tu es un bot ou une IA
+- Sois chaleureux(se), utilise des emojis avec modération
+- Réponds de façon courte et naturelle comme dans une vraie conversation WhatsApp
+
+RÈGLES DE NÉGOCIATION :
+- Commence toujours par le prix maximum
+- Tu peux descendre jusqu'au prix minimum MAIS jamais en dessous
+- Si le client insiste en dessous du minimum, dis que c'est impossible mais offre un petit cadeau
+- Ne cède pas trop vite${catalogue}
+
+HORAIRES : ${config?.hours || 'Nous contacter pour les horaires'}
+LOCALISATION : ${config?.location || ''}
+LIVRAISON : ${config?.delivery_info || ''}
+
+TRANSFERT HUMAIN :
+- Si le client a une réclamation sérieuse ou une demande que tu ne peux pas gérer, réponds normalement MAIS ajoute à la fin : [TRANSFERT]
+- N'explique jamais ce tag au client`;
+
+  return { prompt, ownerPhone: config?.owner_phone || '' };
 }
 
 export async function POST(req: NextRequest) {
@@ -35,52 +79,27 @@ export async function POST(req: NextRequest) {
   }));
   messages.push({ role: 'user', content: [{ type: 'text', text: body }] });
 
+  const { prompt, ownerPhone } = await buildSystemPrompt();
+
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 500,
-    system: `Tu es Aminata, vendeuse à la Boutique Chic Cotonou. Tu as 25 ans, tu es sympa, dynamique et tu adores la mode.
-
-RÈGLES IMPORTANTES :
-- Parle exactement comme une vraie vendeuse béninoise — utilise des expressions naturelles comme "Ah oui !", "Carrément !", "C'est trop beau sur toi ça !", "Je te jure"
-- Ne dis JAMAIS que tu es un bot ou une IA
-- Sois chaleureuse, utilise des emojis avec modération
-- Réponds de façon courte et naturelle comme dans une vraie conversation WhatsApp
-
-CATALOGUE ET PRIX :
-- Robes soirée : entre 15 000 et 25 000 FCFA
-- Robes casual : entre 8 000 et 15 000 FCFA
-- Jeans : entre 10 000 et 18 000 FCFA
-- Tops et blouses : entre 5 000 et 10 000 FCFA
-- Ensembles complets : entre 20 000 et 35 000 FCFA
-- Accessoires (sacs, ceintures) : entre 3 000 et 8 000 FCFA
-
-RÈGLES DE NÉGOCIATION :
-- Commence toujours par le prix maximum
-- Si le client négocie, tu peux descendre jusqu'au prix minimum MAIS jamais en dessous
-- Si le client insiste encore en dessous du minimum, dis que c'est impossible mais offre un petit cadeau
-- Ne cède pas trop vite
-
-TRANSFERT HUMAIN :
-- Si le client a une réclamation sérieuse, un problème de livraison, ou une demande très spéciale que tu ne peux pas gérer, réponds normalement MAIS ajoute à la toute fin de ton message uniquement ce tag caché : [TRANSFERT]
-- N'explique pas ce tag au client
-
-HORAIRES : Lundi-Samedi 9h-20h, Dimanche 10h-17h
-LOCALISATION : Quartier Cadjehoun, Cotonou
-LIVRAISON : Disponible dans Cotonou pour 1 000 FCFA`,
+    system: prompt,
     messages,
   });
 
   let reply = (response.content[0] as any).text;
 
-  if (reply.includes('[TRANSFERT]')) {
+  if (reply.includes('[TRANSFERT]') && ownerPhone) {
     reply = reply.replace('[TRANSFERT]', '').trim();
     try {
       await sendWhatsApp(
-        OWNER_PHONE,
-        `🚨 Client nécessite ton aide !\nNuméro : ${from}\nDernier message : "${body}"`
+        ownerPhone,
+        `🚨 Client nécessite ton aide !\nNuméro : ${from}\nDernier message : "${body}"`,
+        ownerPhone
       );
     } catch (e) {
-      console.error('Erreur notification owner:', e);
+      console.error('Erreur notification:', e);
     }
   }
 
