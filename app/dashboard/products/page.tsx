@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import Sidebar from '../components/SidebarNav';
 
 export default function Products() {
   const [products, setProducts] = useState<any[]>([]);
@@ -32,11 +32,7 @@ export default function Products() {
 
   const openEdit = (p: any) => {
     setEditing(p);
-    setForm({
-      name: p.name, description: p.description || '', category: p.category || '',
-      price_fixed: p.price_fixed || '', price_min: p.price_min || '',
-      price_max: p.price_max || '', image_url: p.image_url || '', available: p.available,
-    });
+    setForm({ name: p.name, description: p.description || '', category: p.category || '', price_fixed: p.price_fixed || '', price_min: p.price_min || '', price_max: p.price_max || '', image_url: p.image_url || '', available: p.available });
     setShowForm(true);
   };
 
@@ -71,120 +67,132 @@ export default function Products() {
     loadProducts();
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Supprimer cet article ?')) return;
-    await fetch(`/api/dashboard/products?id=${id}`, { method: 'DELETE' });
-    loadProducts();
-  };
-
-  const input = (label: string, key: string, type = 'text', placeholder = '') => (
-    <div style={{ marginBottom: '16px' }}>
-      <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: '#444' }}>{label}</label>
-      <input
-        type={type}
-        placeholder={placeholder}
-        value={(form as any)[key]}
-        onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-        style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px', boxSizing: 'border-box' }}
-      />
-    </div>
-  );
-
   return (
-    <div style={{ fontFamily: 'sans-serif', maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <Link href="/dashboard" style={{ color: '#666', textDecoration: 'none', fontSize: '14px' }}>← Retour</Link>
-          <h1 style={{ fontSize: '22px', fontWeight: 'bold' }}>Catalogue produits</h1>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#f0f4f8', fontFamily: 'sans-serif' }}>
+      <Sidebar />
+
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ background: '#fff', borderBottom: '1px solid #e5eaf0', padding: '0 28px', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ fontSize: '16px', fontWeight: 600, color: '#1a2942' }}>Catalogue produits</div>
+          <button onClick={openAdd} style={{ background: '#25D366', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 18px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>
+            + Ajouter un article
+          </button>
         </div>
-        <button onClick={openAdd} style={{ background: '#0070f3', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 20px', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>
-          + Ajouter un article
-        </button>
-      </div>
 
-      {loading && <p style={{ color: '#666' }}>Chargement...</p>}
+        <div style={{ padding: '24px 28px', overflowY: 'auto', flex: 1 }}>
+          {loading && <div style={{ fontSize: '13px', color: '#8899bb' }}>Chargement...</div>}
 
-      {/* Grille produits */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px' }}>
-        {products.map(p => (
-          <div key={p.id} style={{ border: '1px solid #e0e0e0', borderRadius: '12px', overflow: 'hidden', background: 'white' }}>
-            {p.image_url ? (
-              <img src={p.image_url} alt={p.name} style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
-            ) : (
-              <div style={{ width: '100%', height: '180px', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '40px' }}>🛍️</div>
-            )}
-            <div style={{ padding: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
-                <h3 style={{ fontSize: '15px', fontWeight: '600', margin: 0 }}>{p.name}</h3>
-                <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '20px', background: p.available ? '#e6f7ee' : '#ffeee6', color: p.available ? '#0a7c3e' : '#c0392b' }}>
-                  {p.available ? 'Dispo' : 'Indispo'}
-                </span>
-              </div>
-              {p.category && <div style={{ fontSize: '12px', color: '#888', marginBottom: '6px' }}>{p.category}</div>}
-              {p.description && <p style={{ fontSize: '13px', color: '#666', marginBottom: '8px', lineHeight: '1.4' }}>{p.description}</p>}
-              <div style={{ fontSize: '14px', fontWeight: '600', color: '#0070f3', marginBottom: '12px' }}>
-                {p.price_fixed ? `${p.price_fixed.toLocaleString()} FCFA` : `${p.price_min?.toLocaleString()} - ${p.price_max?.toLocaleString()} FCFA`}
-              </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => openEdit(p)} style={{ flex: 1, padding: '8px', border: '1px solid #ddd', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', background: 'white' }}>Modifier</button>
-                <button onClick={() => handleDelete(p.id)} style={{ flex: 1, padding: '8px', border: '1px solid #ffcdd2', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', background: '#fff5f5', color: '#c0392b' }}>Supprimer</button>
-              </div>
+          {!loading && products.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '60px 20px', color: '#8899bb' }}>
+              <div style={{ fontSize: '40px', marginBottom: '12px' }}>🛍️</div>
+              <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '6px', color: '#1a2942' }}>Aucun article</div>
+              <div style={{ fontSize: '13px' }}>Ajoutez vos premiers articles au catalogue</div>
             </div>
+          )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '16px' }}>
+            {products.map(p => (
+              <div key={p.id} style={{ background: '#fff', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e5eaf0' }}>
+                {p.image_url ? (
+                  <img src={p.image_url} alt={p.name} style={{ width: '100%', height: '170px', objectFit: 'cover' }} />
+                ) : (
+                  <div style={{ width: '100%', height: '170px', background: '#f0f4f8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '36px' }}>🛍️</div>
+                )}
+                <div style={{ padding: '14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
+                    <div style={{ fontSize: '14px', fontWeight: 600, color: '#1a2942' }}>{p.name}</div>
+                    <span style={{ fontSize: '10px', padding: '2px 7px', borderRadius: '20px', background: p.available ? '#e6f7ee' : '#fdecea', color: p.available ? '#0a7c3e' : '#c0392b', fontWeight: 500, flexShrink: 0, marginLeft: '6px' }}>
+                      {p.available ? 'Dispo' : 'Indispo'}
+                    </span>
+                  </div>
+                  {p.category && <div style={{ fontSize: '11px', color: '#8899bb', marginBottom: '4px' }}>{p.category}</div>}
+                  {p.description && <div style={{ fontSize: '12px', color: '#667788', marginBottom: '8px', lineHeight: 1.4 }}>{p.description}</div>}
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#25D366', marginBottom: '12px' }}>
+                    {p.price_fixed
+                      ? `${p.price_fixed.toLocaleString()} FCFA`
+                      : `${p.price_min?.toLocaleString()} – ${p.price_max?.toLocaleString()} FCFA`}
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button onClick={() => openEdit(p)} style={{ flex: 1, padding: '7px', border: '1px solid #e5eaf0', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', background: '#fff', color: '#1a2942', fontWeight: 500 }}>Modifier</button>
+                    <button onClick={async () => { if (confirm('Supprimer ?')) { await fetch(`/api/dashboard/products?id=${p.id}`, { method: 'DELETE' }); loadProducts(); } }}
+                      style={{ flex: 1, padding: '7px', border: '1px solid #fdecea', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', background: '#fdecea', color: '#c0392b', fontWeight: 500 }}>
+                      Supprimer
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
 
-      {/* Modal formulaire */}
+      {/* Modal */}
       {showForm && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'white', borderRadius: '16px', padding: '28px', width: '90%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '20px' }}>
-              {editing ? 'Modifier l\'article' : 'Ajouter un article'}
-            </h2>
-            {input('Nom de l\'article *', 'name', 'text', 'Ex: Robe de soirée')}
-            {input('Catégorie', 'category', 'text', 'Ex: Robes, Jeans, Tops...')}
-            {input('Description', 'description', 'text', 'Description optionnelle')}
-            
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(26,41,66,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: '#fff', borderRadius: '16px', padding: '28px', width: '90%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#1a2942' }}>
+                {editing ? 'Modifier l\'article' : 'Ajouter un article'}
+              </h2>
+              <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#8899bb' }}>×</button>
+            </div>
+
+            {[
+              { label: 'Nom de l\'article *', key: 'name', placeholder: 'Ex: Robe de soirée' },
+              { label: 'Catégorie', key: 'category', placeholder: 'Ex: Robes, Jeans...' },
+              { label: 'Description', key: 'description', placeholder: 'Description optionnelle' },
+            ].map(({ label, key, placeholder }) => (
+              <div key={key} style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#1a2942', marginBottom: '6px' }}>{label}</label>
+                <input
+                  type="text" placeholder={placeholder}
+                  value={(form as any)[key]}
+                  onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #e5eaf0', borderRadius: '8px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', color: '#1a2942' }}
+                />
+              </div>
+            ))}
+
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: '#444' }}>Type de prix</label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
-                <div>
-                  <label style={{ fontSize: '12px', color: '#666' }}>Prix fixe (FCFA)</label>
-                  <input type="number" placeholder="Ex: 15000" value={form.price_fixed} onChange={e => setForm(f => ({ ...f, price_fixed: e.target.value, price_min: '', price_max: '' }))}
-                    style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '13px', boxSizing: 'border-box' }} />
-                </div>
-                <div>
-                  <label style={{ fontSize: '12px', color: '#666' }}>Prix min (FCFA)</label>
-                  <input type="number" placeholder="Ex: 8000" value={form.price_min} onChange={e => setForm(f => ({ ...f, price_min: e.target.value, price_fixed: '' }))}
-                    style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '13px', boxSizing: 'border-box' }} />
-                </div>
-                <div>
-                  <label style={{ fontSize: '12px', color: '#666' }}>Prix max (FCFA)</label>
-                  <input type="number" placeholder="Ex: 15000" value={form.price_max} onChange={e => setForm(f => ({ ...f, price_max: e.target.value, price_fixed: '' }))}
-                    style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '6px', fontSize: '13px', boxSizing: 'border-box' }} />
-                </div>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#1a2942', marginBottom: '8px' }}>Prix</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                {[
+                  { label: 'Prix fixe', key: 'price_fixed', placeholder: '15000' },
+                  { label: 'Prix min', key: 'price_min', placeholder: '8000' },
+                  { label: 'Prix max', key: 'price_max', placeholder: '15000' },
+                ].map(({ label, key, placeholder }) => (
+                  <div key={key}>
+                    <label style={{ fontSize: '11px', color: '#8899bb' }}>{label} (FCFA)</label>
+                    <input
+                      type="number" placeholder={placeholder}
+                      value={(form as any)[key]}
+                      onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                      style={{ width: '100%', padding: '8px', border: '1px solid #e5eaf0', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', outline: 'none', color: '#1a2942' }}
+                    />
+                  </div>
+                ))}
               </div>
             </div>
 
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '6px', color: '#444' }}>Photo (optionnelle)</label>
-              <input type="file" accept="image/*" onChange={handleUpload} style={{ fontSize: '13px' }} />
-              {uploading && <p style={{ fontSize: '12px', color: '#0070f3', marginTop: '4px' }}>Upload en cours...</p>}
-              {form.image_url && <img src={form.image_url} alt="preview" style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '8px', marginTop: '8px' }} />}
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#1a2942', marginBottom: '6px' }}>Photo (optionnelle)</label>
+              <input type="file" accept="image/*" onChange={handleUpload} style={{ fontSize: '12px', color: '#1a2942' }} />
+              {uploading && <div style={{ fontSize: '12px', color: '#25D366', marginTop: '4px' }}>Upload en cours...</div>}
+              {form.image_url && <img src={form.image_url} alt="preview" style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '8px', marginTop: '8px' }} />}
             </div>
 
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: '#1a2942' }}>
                 <input type="checkbox" checked={form.available} onChange={e => setForm(f => ({ ...f, available: e.target.checked }))} />
                 Article disponible
               </label>
             </div>
 
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={() => setShowForm(false)} style={{ flex: 1, padding: '12px', border: '1px solid #ddd', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', background: 'white' }}>
+              <button onClick={() => setShowForm(false)} style={{ flex: 1, padding: '11px', border: '1px solid #e5eaf0', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', background: '#fff', color: '#1a2942', fontWeight: 500 }}>
                 Annuler
               </button>
-              <button onClick={handleSave} disabled={saving || !form.name} style={{ flex: 1, padding: '12px', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600', background: saving || !form.name ? '#ccc' : '#0070f3', color: 'white' }}>
+              <button onClick={handleSave} disabled={saving || !form.name} style={{ flex: 1, padding: '11px', border: 'none', borderRadius: '8px', cursor: saving || !form.name ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: 600, background: saving || !form.name ? '#ccc' : '#25D366', color: '#fff' }}>
                 {saving ? 'Enregistrement...' : 'Enregistrer'}
               </button>
             </div>
