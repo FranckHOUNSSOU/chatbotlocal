@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Sidebar from '../components/SidebarNav';
+import SidebarNav from '../components/SidebarNav';
 
 export default function Config() {
   const [config, setConfig] = useState<any>(null);
@@ -26,106 +26,96 @@ export default function Config() {
     setTimeout(() => setSaved(false), 3000);
   };
 
-  const inputStyle = {
-    width: '100%', padding: '10px 12px', border: '1px solid #e5eaf0',
-    borderRadius: '8px', fontSize: '13px', boxSizing: 'border-box' as const,
-    outline: 'none', color: '#1a2942', background: '#fff',
-  };
-
-  const labelStyle = {
-    display: 'block' as const, fontSize: '12px',
-    fontWeight: 600 as const, color: '#1a2942', marginBottom: '6px',
-  };
-
   if (loading) return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f0f4f8', fontFamily: 'sans-serif' }}>
-      <Sidebar />
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8899bb', fontSize: '14px' }}>Chargement...</div>
+    <div className="flex min-h-screen bg-[#f0f4f8]">
+      <SidebarNav />
+      <div className="flex-1 flex items-center justify-center text-sm text-[#8899bb]">Chargement...</div>
     </div>
   );
 
-  return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f0f4f8', fontFamily: 'sans-serif' }}>
-      <Sidebar />
+  const fields = [
+    { label: 'Nom du bot', key: 'bot_name', placeholder: 'Ex: Aminata' },
+    { label: 'Nom du business', key: 'business_name', placeholder: 'Ex: Boutique Chic Cotonou' },
+    { label: 'Type de business', key: 'business_type', placeholder: 'Ex: boutique, restaurant, pharmacie...' },
+    { label: 'Localisation', key: 'location', placeholder: 'Ex: Quartier Cadjehoun, Cotonou' },
+    { label: 'Horaires', key: 'hours', placeholder: 'Ex: Lun-Sam 9h-20h, Dim 10h-17h' },
+    { label: 'Livraison', key: 'delivery_info', placeholder: 'Ex: Disponible dans Cotonou pour 1 000 FCFA' },
+  ];
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ background: '#fff', borderBottom: '1px solid #e5eaf0', padding: '0 28px', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ fontSize: '16px', fontWeight: 600, color: '#1a2942' }}>Configuration du bot</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {saved && <span style={{ fontSize: '13px', color: '#25D366', fontWeight: 500 }}>✓ Sauvegardé !</span>}
-            <button onClick={handleSave} disabled={saving} style={{ background: saving ? '#ccc' : '#25D366', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 18px', cursor: saving ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: 600 }}>
+  return (
+    <div className="flex min-h-screen bg-[#f0f4f8]">
+      <SidebarNav />
+
+      <div className="flex-1 flex flex-col min-w-0">
+
+        {/* Topbar */}
+        <div className="bg-white border-b border-[#e5eaf0] px-6 h-14 flex items-center justify-between sticky top-0 z-30 mt-14 lg:mt-0">
+          <h1 className="text-base font-semibold text-[#1a2942]">Configuration du bot</h1>
+          <div className="flex items-center gap-3">
+            {saved && <span className="text-sm text-[#25D366] font-medium">✓ Sauvegardé !</span>}
+            <button onClick={handleSave} disabled={saving}
+              className={`text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors ${saving ? 'bg-gray-300 cursor-not-allowed' : 'bg-[#25D366] hover:bg-[#1db954]'}`}>
               {saving ? 'Enregistrement...' : 'Sauvegarder'}
             </button>
           </div>
         </div>
 
-        <div style={{ padding: '24px 28px', overflowY: 'auto', flex: 1 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: '20px', maxWidth: '1000px' }}>
+        <div className="p-4 lg:p-6 overflow-y-auto flex-1">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl">
 
             {/* Infos générales */}
-            <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', border: '1px solid #e5eaf0' }}>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: '#1a2942', marginBottom: '20px', paddingBottom: '12px', borderBottom: '1px solid #f0f4f8' }}>
-                Informations générales
+            <div className="bg-white rounded-xl border border-[#e5eaf0] overflow-hidden">
+              <div className="px-6 py-4 border-b border-[#f0f4f8]">
+                <h2 className="text-sm font-bold text-[#1a2942]">Informations générales</h2>
+                <p className="text-xs text-[#8899bb] mt-0.5">Ces infos sont injectées automatiquement dans le bot</p>
               </div>
+              <div className="p-6 space-y-4">
+                {fields.map(({ label, key, placeholder }) => (
+                  <div key={key}>
+                    <label className="block text-xs font-semibold text-[#1a2942] mb-1.5">{label}</label>
+                    <input type="text" placeholder={placeholder}
+                      value={config?.[key] || ''}
+                      onChange={e => setConfig((c: any) => ({ ...c, [key]: e.target.value }))}
+                      className="w-full px-3 py-2.5 border border-[#e5eaf0] rounded-lg text-sm text-[#1a2942] outline-none focus:border-[#25D366] transition-colors bg-white"
+                    />
+                  </div>
+                ))}
 
-              {[
-                { label: 'Nom du bot', key: 'bot_name', placeholder: 'Ex: Aminata' },
-                { label: 'Nom du business', key: 'business_name', placeholder: 'Ex: Boutique Chic Cotonou' },
-                { label: 'Type de business', key: 'business_type', placeholder: 'Ex: boutique, restaurant...' },
-                { label: 'Localisation', key: 'location', placeholder: 'Ex: Cadjehoun, Cotonou' },
-                { label: 'Horaires', key: 'hours', placeholder: 'Ex: Lun-Sam 9h-20h' },
-                { label: 'Livraison', key: 'delivery_info', placeholder: 'Ex: Cotonou 1 000 FCFA' },
-              ].map(({ label, key, placeholder }) => (
-                <div key={key} style={{ marginBottom: '16px' }}>
-                  <label style={labelStyle}>{label}</label>
-                  <input
-                    type="text" placeholder={placeholder}
-                    value={config?.[key] || ''}
-                    onChange={e => setConfig((c: any) => ({ ...c, [key]: e.target.value }))}
-                    style={inputStyle}
+                <div>
+                  <label className="block text-xs font-semibold text-[#1a2942] mb-1.5">Numéro propriétaire (notifications)</label>
+                  <input type="text" placeholder="Ex: whatsapp:+22967383616"
+                    value={config?.owner_phone || ''}
+                    onChange={e => setConfig((c: any) => ({ ...c, owner_phone: e.target.value }))}
+                    className="w-full px-3 py-2.5 border border-[#e5eaf0] rounded-lg text-sm text-[#1a2942] outline-none focus:border-[#25D366] transition-colors bg-white"
                   />
-                </div>
-              ))}
-
-              <div style={{ marginBottom: '0' }}>
-                <label style={labelStyle}>Numéro propriétaire (notifications)</label>
-                <input
-                  type="text" placeholder="Ex: whatsapp:+22967383616"
-                  value={config?.owner_phone || ''}
-                  onChange={e => setConfig((c: any) => ({ ...c, owner_phone: e.target.value }))}
-                  style={inputStyle}
-                />
-                <div style={{ fontSize: '11px', color: '#8899bb', marginTop: '4px' }}>
-                  Format : whatsapp:+229XXXXXXXX
+                  <p className="text-[10px] text-[#8899bb] mt-1">Format : whatsapp:+229XXXXXXXX</p>
                 </div>
               </div>
             </div>
 
             {/* Prompt personnalisé */}
-            <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', border: '1px solid #e5eaf0' }}>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: '#1a2942', marginBottom: '8px', paddingBottom: '12px', borderBottom: '1px solid #f0f4f8' }}>
-                Prompt personnalisé
+            <div className="bg-white rounded-xl border border-[#e5eaf0] overflow-hidden">
+              <div className="px-6 py-4 border-b border-[#f0f4f8]">
+                <h2 className="text-sm font-bold text-[#1a2942]">Prompt personnalisé</h2>
+                <p className="text-xs text-[#8899bb] mt-0.5">Laissez vide pour utiliser le prompt automatique</p>
               </div>
-              <div style={{ fontSize: '12px', color: '#8899bb', marginBottom: '16px', lineHeight: 1.5 }}>
-                Laissez vide pour utiliser le prompt automatique basé sur vos informations à gauche. Remplissez uniquement si vous souhaitez un comportement très spécifique.
-              </div>
+              <div className="p-6 flex flex-col gap-4">
+                <textarea
+                  placeholder={`Exemple :\nTu es Aminata, vendeuse à la Boutique Chic...\n\nRÈGLES :\n- Ne dis jamais que tu es un bot\n- Réponds en français\n...`}
+                  value={config?.system_prompt || ''}
+                  onChange={e => setConfig((c: any) => ({ ...c, system_prompt: e.target.value }))}
+                  rows={14}
+                  className="w-full px-3 py-2.5 border border-[#e5eaf0] rounded-lg text-xs text-[#1a2942] outline-none focus:border-[#25D366] transition-colors resize-vertical font-mono leading-relaxed bg-white"
+                />
 
-              <textarea
-                placeholder={`Exemple :\nTu es Aminata, vendeuse à la Boutique Chic...\n\nRÈGLES :\n- Ne dis jamais que tu es un bot\n- Réponds en français\n...`}
-                value={config?.system_prompt || ''}
-                onChange={e => setConfig((c: any) => ({ ...c, system_prompt: e.target.value }))}
-                rows={16}
-                style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6, fontFamily: 'monospace', fontSize: '12px' }}
-              />
-
-              <div style={{ marginTop: '12px', padding: '12px', background: '#f0faf4', borderRadius: '8px', border: '1px solid #c3e6cb' }}>
-                <div style={{ fontSize: '12px', fontWeight: 600, color: '#0a7c3e', marginBottom: '4px' }}>Astuce</div>
-                <div style={{ fontSize: '11px', color: '#2d6a4f', lineHeight: 1.5 }}>
-                  Le prompt automatique intègre déjà les informations générales et le catalogue produits. Utilisez le prompt personnalisé uniquement pour des cas très spécifiques.
+                <div className="bg-[#f0faf4] rounded-lg p-4 border border-[#c3e6cb]">
+                  <div className="text-xs font-bold text-[#0a7c3e] mb-1">Astuce</div>
+                  <div className="text-xs text-[#2d6a4f] leading-relaxed">
+                    Le prompt automatique intègre déjà vos informations générales et le catalogue produits. Utilisez le prompt personnalisé uniquement pour des comportements très spécifiques.
+                  </div>
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       </div>

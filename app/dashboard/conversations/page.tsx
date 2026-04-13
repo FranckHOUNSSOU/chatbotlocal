@@ -1,6 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Sidebar from '../components/SidebarNav';
+import SidebarNav from '../components/SidebarNav';
+
+const ADMIN_PHONE = 'whatsapp:+22967383616';
 
 export default function Conversations() {
   const [grouped, setGrouped] = useState<any>({});
@@ -15,54 +17,60 @@ export default function Conversations() {
 
   const phones = Object.keys(grouped);
 
-  return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f0f4f8', fontFamily: 'sans-serif' }}>
-      <Sidebar />
+  const isAdmin = (phone: string) => phone === ADMIN_PHONE;
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ background: '#fff', borderBottom: '1px solid #e5eaf0', padding: '0 28px', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ fontSize: '16px', fontWeight: 600, color: '#1a2942' }}>Conversations</div>
-          <div style={{ fontSize: '12px', color: '#8899bb' }}>{phones.length} client{phones.length > 1 ? 's' : ''}</div>
+  return (
+    <div className="flex min-h-screen bg-[#f0f4f8]">
+      <SidebarNav />
+
+      <div className="flex-1 flex flex-col min-w-0">
+
+        {/* Topbar */}
+        <div className="bg-white border-b border-[#e5eaf0] px-6 h-14 flex items-center justify-between sticky top-0 z-30 mt-14 lg:mt-0">
+          <h1 className="text-base font-semibold text-[#1a2942]">Conversations</h1>
+          <span className="text-xs text-[#8899bb]">{phones.length} client{phones.length > 1 ? 's' : ''}</span>
         </div>
 
-        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '280px 1fr', overflow: 'hidden', height: 'calc(100vh - 56px)' }}>
+        {/* Layout */}
+        <div className="flex-1 flex overflow-hidden" style={{ height: 'calc(100vh - 56px)' }}>
 
           {/* Liste clients */}
-          <div style={{ background: '#fff', borderRight: '1px solid #e5eaf0', overflowY: 'auto' }}>
-            {loading && <div style={{ padding: '20px', fontSize: '13px', color: '#8899bb' }}>Chargement...</div>}
+          <div className="w-72 flex-shrink-0 bg-white border-r border-[#e5eaf0] overflow-y-auto">
+            {loading && <div className="p-5 text-sm text-[#8899bb]">Chargement...</div>}
             {!loading && phones.length === 0 && (
-              <div style={{ padding: '40px 20px', textAlign: 'center', fontSize: '13px', color: '#8899bb' }}>
-                Aucune conversation
-              </div>
+              <div className="p-10 text-center text-sm text-[#8899bb]">Aucune conversation</div>
             )}
             {phones.map(phone => {
               const msgs = grouped[phone];
               const last = msgs[0];
               const active = selected === phone;
+              const admin = isAdmin(phone);
               return (
-                <div key={phone} onClick={() => setSelected(phone)} style={{
-                  padding: '14px 16px', cursor: 'pointer',
-                  borderBottom: '1px solid #f0f4f8',
-                  background: active ? '#f0faf4' : 'white',
-                  borderLeft: active ? '3px solid #25D366' : '3px solid transparent',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#e6f7ee', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, color: '#0a7c3e', flexShrink: 0 }}>
+                <div key={phone} onClick={() => setSelected(phone)}
+                  className={`px-4 py-3 cursor-pointer border-b border-[#f0f4f8] transition-colors ${active ? 'bg-[#f0faf4] border-l-2 border-l-[#25D366]' : 'hover:bg-[#f8fafc]'}`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${admin ? 'bg-[#fff8e1] text-[#b8860b] ring-2 ring-[#ffd700]' : 'bg-[#e6f7ee] text-[#0a7c3e]'}`}>
                       {phone.replace('whatsapp:+', '').slice(-2).toUpperCase()}
                     </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '13px', fontWeight: 600, color: '#1a2942' }}>
-                        {phone.replace('whatsapp:', '')}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-xs font-semibold text-[#1a2942] truncate">
+                          {phone.replace('whatsapp:', '')}
+                        </span>
+                        {admin && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0"
+                            style={{ background: '#fff8e1', color: '#b8860b', border: '1px solid #ffd700' }}>
+                            ADMIN
+                          </span>
+                        )}
                       </div>
-                      <div style={{ fontSize: '11px', color: '#8899bb', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {last?.message}
-                      </div>
+                      <div className="text-xs text-[#8899bb] truncate">{last?.message}</div>
                     </div>
-                    <div style={{ fontSize: '10px', color: '#aabbcc', flexShrink: 0 }}>
+                    <div className="text-[10px] text-[#aabbcc] flex-shrink-0">
                       {new Date(last?.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
-                  <div style={{ fontSize: '11px', color: '#aabbcc', marginTop: '4px', marginLeft: '46px' }}>
+                  <div className="text-[10px] text-[#aabbcc] mt-1 ml-12">
                     {msgs.length} message{msgs.length > 1 ? 's' : ''}
                   </div>
                 </div>
@@ -70,36 +78,49 @@ export default function Conversations() {
             })}
           </div>
 
-          {/* Messages */}
-          <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          {/* Zone messages */}
+          <div className="flex-1 flex flex-col overflow-hidden min-w-0">
             {!selected ? (
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aabbcc', fontSize: '14px' }}>
-                Sélectionnez une conversation
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center text-[#aabbcc]">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="mx-auto mb-3 opacity-40">
+                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                  </svg>
+                  <div className="text-sm">Sélectionnez une conversation</div>
+                </div>
               </div>
             ) : (
               <>
-                <div style={{ padding: '12px 20px', background: '#fff', borderBottom: '1px solid #e5eaf0', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#e6f7ee', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, color: '#0a7c3e' }}>
+                {/* Header conversation */}
+                <div className="px-5 py-3 bg-white border-b border-[#e5eaf0] flex items-center gap-3 flex-shrink-0">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${isAdmin(selected) ? 'bg-[#fff8e1] text-[#b8860b] ring-2 ring-[#ffd700]' : 'bg-[#e6f7ee] text-[#0a7c3e]'}`}>
                     {selected.replace('whatsapp:+', '').slice(-2).toUpperCase()}
                   </div>
                   <div>
-                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#1a2942' }}>{selected.replace('whatsapp:', '')}</div>
-                    <div style={{ fontSize: '11px', color: '#25D366' }}>● En ligne</div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-[#1a2942]">{selected.replace('whatsapp:', '')}</span>
+                      {isAdmin(selected) && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                          style={{ background: '#fff8e1', color: '#b8860b', border: '1px solid #ffd700' }}>
+                          ADMIN
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-[#25D366]">● {grouped[selected]?.length} messages</div>
                   </div>
                 </div>
 
-                <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px', background: '#f8fafc' }}>
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#f8fafc]">
                   {grouped[selected]?.slice().reverse().map((msg: any, i: number) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-start' : 'flex-end' }}>
-                      <div style={{
-                        maxWidth: '65%', padding: '10px 14px', borderRadius: msg.role === 'user' ? '4px 16px 16px 16px' : '16px 4px 16px 16px',
-                        background: msg.role === 'user' ? '#fff' : '#1a2942',
-                        color: msg.role === 'user' ? '#1a2942' : '#fff',
-                        fontSize: '13px', lineHeight: '1.5',
-                        border: msg.role === 'user' ? '1px solid #e5eaf0' : 'none',
-                      }}>
+                    <div key={i} className={`flex ${msg.role === 'user' ? 'justify-start' : 'justify-end'}`}>
+                      <div className={`max-w-[65%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                        msg.role === 'user'
+                          ? 'bg-white text-[#1a2942] border border-[#e5eaf0] rounded-tl-sm'
+                          : 'bg-[#1a2942] text-white rounded-tr-sm'
+                      }`}>
                         {msg.message}
-                        <div style={{ fontSize: '10px', opacity: 0.5, marginTop: '4px', textAlign: 'right' }}>
+                        <div className={`text-[10px] mt-1 text-right ${msg.role === 'user' ? 'text-[#aabbcc]' : 'text-white/50'}`}>
                           {new Date(msg.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                         </div>
                       </div>

@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Sidebar from '../components/SidebarNav';
+import SidebarNav from '../components/SidebarNav';
 
 export default function Products() {
   const [products, setProducts] = useState<any[]>([]);
@@ -21,7 +21,7 @@ export default function Products() {
     setLoading(true);
     fetch('/api/dashboard/products')
       .then(r => r.json())
-      .then(data => { setProducts(data); setLoading(false); });
+      .then(data => { setProducts(Array.isArray(data) ? data : []); setLoading(false); });
   };
 
   const openAdd = () => {
@@ -68,54 +68,58 @@ export default function Products() {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f0f4f8', fontFamily: 'sans-serif' }}>
-      <Sidebar />
+    <div className="flex min-h-screen bg-[#f0f4f8]">
+      <SidebarNav />
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ background: '#fff', borderBottom: '1px solid #e5eaf0', padding: '0 28px', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ fontSize: '16px', fontWeight: 600, color: '#1a2942' }}>Catalogue produits</div>
-          <button onClick={openAdd} style={{ background: '#25D366', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 18px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>
+      <div className="flex-1 flex flex-col min-w-0">
+
+        {/* Topbar */}
+        <div className="bg-white border-b border-[#e5eaf0] px-6 h-14 flex items-center justify-between sticky top-0 z-30 mt-14 lg:mt-0">
+          <h1 className="text-base font-semibold text-[#1a2942]">Catalogue produits</h1>
+          <button onClick={openAdd} className="bg-[#25D366] text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-[#1db954] transition-colors">
             + Ajouter un article
           </button>
         </div>
 
-        <div style={{ padding: '24px 28px', overflowY: 'auto', flex: 1 }}>
-          {loading && <div style={{ fontSize: '13px', color: '#8899bb' }}>Chargement...</div>}
+        <div className="p-4 lg:p-6 overflow-y-auto flex-1">
+          {loading && <div className="text-sm text-[#8899bb]">Chargement...</div>}
 
           {!loading && products.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '60px 20px', color: '#8899bb' }}>
-              <div style={{ fontSize: '40px', marginBottom: '12px' }}>🛍️</div>
-              <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '6px', color: '#1a2942' }}>Aucun article</div>
-              <div style={{ fontSize: '13px' }}>Ajoutez vos premiers articles au catalogue</div>
+            <div className="text-center py-20 text-[#8899bb]">
+              <div className="text-5xl mb-4">🛍️</div>
+              <div className="text-base font-semibold text-[#1a2942] mb-2">Aucun article</div>
+              <div className="text-sm">Ajoutez vos premiers articles au catalogue</div>
             </div>
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '16px' }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {products.map(p => (
-              <div key={p.id} style={{ background: '#fff', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e5eaf0' }}>
+              <div key={p.id} className="bg-white rounded-xl overflow-hidden border border-[#e5eaf0] flex flex-col">
                 {p.image_url ? (
-                  <img src={p.image_url} alt={p.name} style={{ width: '100%', height: '170px', objectFit: 'cover' }} />
+                  <img src={p.image_url} alt={p.name} className="w-full h-44 object-cover"/>
                 ) : (
-                  <div style={{ width: '100%', height: '170px', background: '#f0f4f8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '36px' }}>🛍️</div>
+                  <div className="w-full h-44 bg-[#f0f4f8] flex items-center justify-center text-4xl">🛍️</div>
                 )}
-                <div style={{ padding: '14px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '4px' }}>
-                    <div style={{ fontSize: '14px', fontWeight: 600, color: '#1a2942' }}>{p.name}</div>
-                    <span style={{ fontSize: '10px', padding: '2px 7px', borderRadius: '20px', background: p.available ? '#e6f7ee' : '#fdecea', color: p.available ? '#0a7c3e' : '#c0392b', fontWeight: 500, flexShrink: 0, marginLeft: '6px' }}>
+                <div className="p-4 flex flex-col flex-1">
+                  <div className="flex justify-between items-start mb-1">
+                    <div className="text-sm font-semibold text-[#1a2942] leading-tight flex-1 mr-2">{p.name}</div>
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${p.available ? 'bg-[#e6f7ee] text-[#0a7c3e]' : 'bg-[#fdecea] text-[#c0392b]'}`}>
                       {p.available ? 'Dispo' : 'Indispo'}
                     </span>
                   </div>
-                  {p.category && <div style={{ fontSize: '11px', color: '#8899bb', marginBottom: '4px' }}>{p.category}</div>}
-                  {p.description && <div style={{ fontSize: '12px', color: '#667788', marginBottom: '8px', lineHeight: 1.4 }}>{p.description}</div>}
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#25D366', marginBottom: '12px' }}>
+                  {p.category && <div className="text-xs text-[#8899bb] mb-1">{p.category}</div>}
+                  {p.description && <div className="text-xs text-[#667788] mb-2 leading-relaxed flex-1">{p.description}</div>}
+                  <div className="text-sm font-bold text-[#25D366] mb-3">
                     {p.price_fixed
                       ? `${p.price_fixed.toLocaleString()} FCFA`
                       : `${p.price_min?.toLocaleString()} – ${p.price_max?.toLocaleString()} FCFA`}
                   </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button onClick={() => openEdit(p)} style={{ flex: 1, padding: '7px', border: '1px solid #e5eaf0', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', background: '#fff', color: '#1a2942', fontWeight: 500 }}>Modifier</button>
-                    <button onClick={async () => { if (confirm('Supprimer ?')) { await fetch(`/api/dashboard/products?id=${p.id}`, { method: 'DELETE' }); loadProducts(); } }}
-                      style={{ flex: 1, padding: '7px', border: '1px solid #fdecea', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', background: '#fdecea', color: '#c0392b', fontWeight: 500 }}>
+                  <div className="flex gap-2 mt-auto">
+                    <button onClick={() => openEdit(p)} className="flex-1 py-2 text-xs font-medium border border-[#e5eaf0] rounded-lg text-[#1a2942] hover:bg-[#f0f4f8] transition-colors">
+                      Modifier
+                    </button>
+                    <button onClick={async () => { if (confirm('Supprimer ?')) { await fetch(`/api/dashboard/products?id=${p.id}`, { method: 'DELETE' }); loadProducts(); }}}
+                      className="flex-1 py-2 text-xs font-medium border border-[#fdecea] rounded-lg text-[#c0392b] bg-[#fdecea] hover:bg-[#fcc] transition-colors">
                       Supprimer
                     </button>
                   </div>
@@ -128,71 +132,76 @@ export default function Products() {
 
       {/* Modal */}
       {showForm && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(26,41,66,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#fff', borderRadius: '16px', padding: '28px', width: '90%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#1a2942' }}>
+        <div className="fixed inset-0 bg-[#1a2942]/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center p-6 border-b border-[#e5eaf0]">
+              <h2 className="text-base font-bold text-[#1a2942]">
                 {editing ? 'Modifier l\'article' : 'Ajouter un article'}
               </h2>
-              <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#8899bb' }}>×</button>
+              <button onClick={() => setShowForm(false)} className="text-[#8899bb] hover:text-[#1a2942] text-2xl leading-none">&times;</button>
             </div>
 
-            {[
-              { label: 'Nom de l\'article *', key: 'name', placeholder: 'Ex: Robe de soirée' },
-              { label: 'Catégorie', key: 'category', placeholder: 'Ex: Robes, Jeans...' },
-              { label: 'Description', key: 'description', placeholder: 'Description optionnelle' },
-            ].map(({ label, key, placeholder }) => (
-              <div key={key} style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#1a2942', marginBottom: '6px' }}>{label}</label>
-                <input
-                  type="text" placeholder={placeholder}
-                  value={(form as any)[key]}
-                  onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #e5eaf0', borderRadius: '8px', fontSize: '13px', boxSizing: 'border-box', outline: 'none', color: '#1a2942' }}
+            <div className="p-6 space-y-4">
+              {[
+                { label: 'Nom de l\'article *', key: 'name', placeholder: 'Ex: Robe de soirée' },
+                { label: 'Catégorie', key: 'category', placeholder: 'Ex: Robes, Jeans...' },
+                { label: 'Description', key: 'description', placeholder: 'Description optionnelle' },
+              ].map(({ label, key, placeholder }) => (
+                <div key={key}>
+                  <label className="block text-xs font-semibold text-[#1a2942] mb-1.5">{label}</label>
+                  <input type="text" placeholder={placeholder}
+                    value={(form as any)[key]}
+                    onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                    className="w-full px-3 py-2.5 border border-[#e5eaf0] rounded-lg text-sm text-[#1a2942] outline-none focus:border-[#25D366] transition-colors"
+                  />
+                </div>
+              ))}
+
+              <div>
+                <label className="block text-xs font-semibold text-[#1a2942] mb-2">Prix</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { label: 'Prix fixe', key: 'price_fixed', placeholder: '15000' },
+                    { label: 'Prix min', key: 'price_min', placeholder: '8000' },
+                    { label: 'Prix max', key: 'price_max', placeholder: '15000' },
+                  ].map(({ label, key, placeholder }) => (
+                    <div key={key}>
+                      <label className="text-[10px] text-[#8899bb] mb-1 block">{label} (FCFA)</label>
+                      <input type="number" placeholder={placeholder}
+                        value={(form as any)[key]}
+                        onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                        className="w-full px-2.5 py-2 border border-[#e5eaf0] rounded-lg text-xs text-[#1a2942] outline-none focus:border-[#25D366]"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#1a2942] mb-1.5">Photo (optionnelle)</label>
+                <input type="file" accept="image/*" onChange={handleUpload} className="text-xs text-[#1a2942] w-full"/>
+                {uploading && <div className="text-xs text-[#25D366] mt-1">Upload en cours...</div>}
+                {form.image_url && (
+                  <img src={form.image_url} alt="preview" className="w-full h-36 object-cover rounded-lg mt-2"/>
+                )}
+              </div>
+
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={form.available}
+                  onChange={e => setForm(f => ({ ...f, available: e.target.checked }))}
+                  className="w-4 h-4 accent-[#25D366]"
                 />
-              </div>
-            ))}
-
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#1a2942', marginBottom: '8px' }}>Prix</label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
-                {[
-                  { label: 'Prix fixe', key: 'price_fixed', placeholder: '15000' },
-                  { label: 'Prix min', key: 'price_min', placeholder: '8000' },
-                  { label: 'Prix max', key: 'price_max', placeholder: '15000' },
-                ].map(({ label, key, placeholder }) => (
-                  <div key={key}>
-                    <label style={{ fontSize: '11px', color: '#8899bb' }}>{label} (FCFA)</label>
-                    <input
-                      type="number" placeholder={placeholder}
-                      value={(form as any)[key]}
-                      onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                      style={{ width: '100%', padding: '8px', border: '1px solid #e5eaf0', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box', outline: 'none', color: '#1a2942' }}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#1a2942', marginBottom: '6px' }}>Photo (optionnelle)</label>
-              <input type="file" accept="image/*" onChange={handleUpload} style={{ fontSize: '12px', color: '#1a2942' }} />
-              {uploading && <div style={{ fontSize: '12px', color: '#25D366', marginTop: '4px' }}>Upload en cours...</div>}
-              {form.image_url && <img src={form.image_url} alt="preview" style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: '8px', marginTop: '8px' }} />}
-            </div>
-
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: '#1a2942' }}>
-                <input type="checkbox" checked={form.available} onChange={e => setForm(f => ({ ...f, available: e.target.checked }))} />
-                Article disponible
+                <span className="text-sm text-[#1a2942]">Article disponible</span>
               </label>
             </div>
 
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={() => setShowForm(false)} style={{ flex: 1, padding: '11px', border: '1px solid #e5eaf0', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', background: '#fff', color: '#1a2942', fontWeight: 500 }}>
+            <div className="flex gap-3 p-6 pt-0">
+              <button onClick={() => setShowForm(false)}
+                className="flex-1 py-2.5 border border-[#e5eaf0] rounded-lg text-sm text-[#1a2942] font-medium hover:bg-[#f0f4f8]">
                 Annuler
               </button>
-              <button onClick={handleSave} disabled={saving || !form.name} style={{ flex: 1, padding: '11px', border: 'none', borderRadius: '8px', cursor: saving || !form.name ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: 600, background: saving || !form.name ? '#ccc' : '#25D366', color: '#fff' }}>
+              <button onClick={handleSave} disabled={saving || !form.name}
+                className={`flex-1 py-2.5 rounded-lg text-sm font-semibold text-white transition-colors ${saving || !form.name ? 'bg-gray-300 cursor-not-allowed' : 'bg-[#25D366] hover:bg-[#1db954]'}`}>
                 {saving ? 'Enregistrement...' : 'Enregistrer'}
               </button>
             </div>
