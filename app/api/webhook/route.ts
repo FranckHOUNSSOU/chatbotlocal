@@ -6,12 +6,9 @@ import twilio from 'twilio';
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!);
 
-const OWNER_PHONE = 'whatsapp:+22967383616'; // Ton numéro WhatsApp
-
 async function sendWhatsApp(to: string, message: string) {
-  const twilio = (await import('twilio')).default;
-  const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!);
-  await client.messages.create({
+  const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!);
+  await twilioClient.messages.create({
     from: process.env.TWILIO_PHONE_NUMBER!,
     to,
     body: message,
@@ -98,8 +95,7 @@ export async function POST(req: NextRequest) {
     try {
       await sendWhatsApp(
         ownerPhone,
-        `🚨 Client nécessite ton aide !\nNuméro : ${from}\nDernier message : "${body}"`,
-        ownerPhone
+        `🚨 Client nécessite ton aide !\nNuméro : ${from}\nDernier message : "${body}"`
       );
     } catch (e) {
       console.error('Erreur notification:', e);
