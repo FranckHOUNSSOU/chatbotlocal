@@ -63,21 +63,23 @@ export default function Conversations() {
   );
 
   const ConvMessages = () => (
-    <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Header avec bouton retour */}
+    <div className="flex flex-col overflow-hidden bg-[#f8fafc]" style={{ height: '100%' }}>
+      {/* Header fixe avec bouton retour */}
       <div className="px-4 py-3 bg-white border-b border-[#e5eaf0] flex items-center gap-3 flex-shrink-0">
         <button onClick={() => setSelected(null)}
-          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#f0f4f8] transition-colors flex-shrink-0">
+          className="w-9 h-9 flex items-center justify-center rounded-full bg-[#f0f4f8] hover:bg-[#e5eaf0] transition-colors flex-shrink-0">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a2942" strokeWidth="2.5" strokeLinecap="round">
             <path d="M15 18l-6-6 6-6"/>
           </svg>
         </button>
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${isAdmin(selected!) ? 'bg-[#fff8e1] text-[#b8860b] ring-2 ring-[#ffd700]' : 'bg-[#e6f7ee] text-[#0a7c3e]'}`}>
+        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${isAdmin(selected!) ? 'bg-[#fff8e1] text-[#b8860b] ring-2 ring-[#ffd700]' : 'bg-[#e6f7ee] text-[#0a7c3e]'}`}>
           {selected!.replace('whatsapp:+', '').slice(-2).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-[#1a2942] truncate">{selected!.replace('whatsapp:', '')}</span>
+            <span className="text-sm font-semibold text-[#1a2942] truncate">
+              {selected!.replace('whatsapp:', '')}
+            </span>
             {isAdmin(selected!) && (
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0"
                 style={{ background: '#fff8e1', color: '#b8860b', border: '1px solid #ffd700' }}>
@@ -85,12 +87,14 @@ export default function Conversations() {
               </span>
             )}
           </div>
-          <div className="text-xs text-[#25D366]">{grouped[selected!]?.length} messages</div>
+          <div className="text-xs text-[#25D366]">
+            {grouped[selected!]?.length} messages
+          </div>
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#f8fafc]">
+      {/* Messages scrollables */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {grouped[selected!]?.slice().reverse().map((msg: any, i: number) => (
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-start' : 'justify-end'}`}>
             <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
@@ -115,18 +119,18 @@ export default function Conversations() {
 
       <div className="flex-1 flex flex-col min-w-0">
 
-        {/* Topbar — visible uniquement sur desktop ou quand pas de conversation sélectionnée sur mobile */}
+        {/* Topbar desktop + mobile sans conversation sélectionnée */}
         <div className={`bg-white border-b border-[#e5eaf0] px-6 h-14 items-center justify-between sticky top-0 z-30 mt-14 lg:mt-0 ${selected ? 'hidden lg:flex' : 'flex'}`}>
           <h1 className="text-base font-semibold text-[#1a2942]">Conversations</h1>
           <span className="text-xs text-[#8899bb]">{phones.length} client{phones.length > 1 ? 's' : ''}</span>
         </div>
 
-        {/* Mobile : affichage conditionnel */}
-        <div className="flex-1 flex overflow-hidden lg:hidden" style={{ height: 'calc(100vh - 112px)' }}>
+        {/* Mobile */}
+        <div className="flex-1 flex flex-col overflow-hidden lg:hidden" style={{ height: 'calc(100dvh - 112px)' }}>
           {!selected ? <ConvList /> : <ConvMessages />}
         </div>
 
-        {/* Desktop : affichage côte à côte */}
+        {/* Desktop */}
         <div className="hidden lg:flex flex-1 overflow-hidden" style={{ height: 'calc(100vh - 56px)' }}>
           <div className="w-80 flex-shrink-0 border-r border-[#e5eaf0] flex flex-col overflow-hidden">
             <ConvList />
