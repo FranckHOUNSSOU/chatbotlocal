@@ -1,18 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
-import twilio from 'twilio';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!);
 
+const WHATSAPP_API_URL = 'https://graph.facebook.com/v19.0';
+
 async function sendWhatsApp(to: string, message: string) {
-  const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!);
-  await twilioClient.messages.create({
-    from: process.env.TWILIO_PHONE_NUMBER!,
-    to,
-    body: message,
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+
+  const response = await fetch(`${WHATSAPP_API_URL}/${phoneNumberId}/messages`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      messaging_product: 'whatsapp',
+      to,
+      type: 'text',
+      text: { body: message },
+    }),
   });
+
+  if (!response.ok) {
+    const error = await response.json();
+    console.error('Erreur envoi WhatsApp:', error);
+    throw new Error(`WhatsApp API error: ${JSON.stringify(error)}`);
+  }
+
+  return response.json();
 }
 
 async function buildSystemPrompt(): Promise<{ prompt: string; ownerPhone: string }> {
@@ -61,56 +80,99 @@ TRANSFERT HUMAIN :
   return { prompt, ownerPhone: config?.owner_phone || '' };
 }
 
-export async function POST(req: NextRequest) {
-  const formData = await req.formData();
-  const from = formData.get('From') as string;
-  const body = formData.get('Body') as string;
+// GET : vérification du webhook par Meta
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const mode = searchParams.get('hub.mode');
+  const token = searchParams.get('hub.verify_token');
+  const challenge = searchParams.get('hub.challenge');
 
-  const { data: history } = await supabase
-    .from('conversations')
-    .select('role, message')
-    .eq('phone_number', from)
-    .order('created_at', { ascending: true })
-    .limit(20);
+  const verifyToken = process.env.WHATSAPP_VERIFY_TOKEN || 'wabot_verify_token';
 
-  const messages = (history || []).map((h: any) => ({
-    role: h.role as 'user' | 'assistant',
-    content: [{ type: 'text' as const, text: h.message }],
-  }));
-  messages.push({ role: 'user', content: [{ type: 'text', text: body }] });
-
-  const { prompt, ownerPhone } = await buildSystemPrompt();
-
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 500,
-    system: prompt,
-    messages,
-  });
-
-  let reply = (response.content[0] as any).text;
-
-  if (reply.includes('[TRANSFERT]') && ownerPhone) {
-    reply = reply.replace('[TRANSFERT]', '').trim();
-    try {
-      await sendWhatsApp(
-        ownerPhone,
-        `🚨 Client nécessite ton aide !\nNuméro : ${from}\nDernier message : "${body}"`
-      );
-    } catch (e) {
-      console.error('Erreur notification:', e);
-    }
+  if (mode === 'subscribe' && token === verifyToken) {
+    console.log('Webhook vérifié avec succès');
+    return new NextResponse(challenge, { status: 200 });
   }
 
-  await supabase.from('conversations').insert([
-    { phone_number: from, role: 'user', message: body },
-    { phone_number: from, role: 'assistant', message: reply },
-  ]);
+  return new NextResponse('Forbidden', { status: 403 });
+}
 
-  const twiml = `<?xml version="1.0" encoding="UTF-8"?>
-    <Response><Message>${reply}</Message></Response>`;
+// POST : réception des messages WhatsApp
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
 
-  return new NextResponse(twiml, {
-    headers: { 'Content-Type': 'text/xml' },
-  });
+    // Vérifier que c'est bien un message WhatsApp
+    const entry = body?.entry?.[0];
+    const changes = entry?.changes?.[0];
+    const value = changes?.value;
+    const messages = value?.messages;
+
+    if (!messages || messages.length === 0) {
+      // Peut être un status update, on ignore
+      return NextResponse.json({ status: 'ok' });
+    }
+
+    const message = messages[0];
+    const from = message.from; // numéro de l'expéditeur
+    const messageText = message?.text?.body;
+
+    if (!messageText) {
+      // Message non-texte (image, audio...), on ignore pour l'instant
+      return NextResponse.json({ status: 'ok' });
+    }
+
+    // Récupérer l'historique de conversation
+    const { data: history } = await supabase
+      .from('conversations')
+      .select('role, message')
+      .eq('phone_number', from)
+      .order('created_at', { ascending: true })
+      .limit(20);
+
+    const conversationMessages = (history || []).map((h: any) => ({
+      role: h.role as 'user' | 'assistant',
+      content: [{ type: 'text' as const, text: h.message }],
+    }));
+    conversationMessages.push({ role: 'user', content: [{ type: 'text', text: messageText }] });
+
+    const { prompt, ownerPhone } = await buildSystemPrompt();
+
+    // Appel Claude
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 500,
+      system: prompt,
+      messages: conversationMessages,
+    });
+
+    let reply = (response.content[0] as any).text;
+
+    // Gestion du transfert
+    if (reply.includes('[TRANSFERT]') && ownerPhone) {
+      reply = reply.replace('[TRANSFERT]', '').trim();
+      try {
+        await sendWhatsApp(
+          ownerPhone,
+          `🚨 Client nécessite ton aide !\nNuméro : ${from}\nDernier message : "${messageText}"`
+        );
+      } catch (e) {
+        console.error('Erreur notification:', e);
+      }
+    }
+
+    // Envoyer la réponse au client
+    await sendWhatsApp(from, reply);
+
+    // Sauvegarder dans Supabase
+    await supabase.from('conversations').insert([
+      { phone_number: from, role: 'user', message: messageText },
+      { phone_number: from, role: 'assistant', message: reply },
+    ]);
+
+    return NextResponse.json({ status: 'ok' });
+  } catch (error) {
+    console.error('Erreur webhook:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }
